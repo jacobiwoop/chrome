@@ -1,6 +1,5 @@
 FROM debian:bullseye-slim
 
-# Installer les dépendances de base
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
@@ -22,15 +21,18 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Ajouter la clé publique Google pour apt
 RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -
-
-# Ajouter le dépôt Chrome stable
 RUN echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
 
-# Installer Google Chrome stable
 RUN apt-get update && apt-get install -y google-chrome-stable && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Définir une commande par défaut pour tester le headless
-CMD ["google-chrome-stable", "--headless", "--no-sandbox", "--disable-gpu", "--remote-debugging-port=9222", "https://example.com"]
+# Éviter les erreurs liées à XDG_RUNTIME_DIR
+ENV XDG_RUNTIME_DIR=/tmp/runtime-dir
+RUN mkdir -p /tmp/runtime-dir
+
+# Ouvre le port pour Render
+EXPOSE 9222
+
+# Commande qui expose correctement Chrome sur l'interface réseau
+CMD ["google-chrome-stable", "--headless", "--no-sandbox", "--disable-gpu", "--remote-debugging-address=0.0.0.0", "--remote-debugging-port=9222", "https://example.com"]
